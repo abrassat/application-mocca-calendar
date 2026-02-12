@@ -147,7 +147,33 @@ or
   },
 });
 
-define('moccaCalendar', ['jquery', 'fullcalendar', 'moment', 'purify'], function(jQuery, fullCalendar, moment, purify) {
+define('mocca-calendar-main-translations', {keys: [
+    'MoccaCalendar.calendarevent.create',
+    'MoccaCalendar.calendarevent.view',
+    'MoccaCalendar.calendarevent.confirmDelete',
+    'MoccaCalendar.calendar.plainlist.titlepast',
+    'MoccaCalendar.calendar.plainlist.nopastevents',
+    'MoccaCalendar.calendar.plainlist.titleupcoming',
+    'MoccaCalendar.calendar.plainlist.noupcomingevents',
+    'MoccaCalendar.generic.errormessage',
+    'save',
+    'edit',
+    'view',
+    'cancel',
+    'delete',
+    'platform.livetable.loading',
+    'core.widgets.confirmationBox.notification.failed',
+    'core.widgets.confirmationBox.notification.inProgress',
+    'core.widgets.confirmationBox.notification.done',
+    'MoccaCalendar.notification.import.inprogress',
+    'MoccaCalendar.notification.import.done',
+    'MoccaCalendar.notification.import.error',
+    'MoccaCalendar.notification.import.filetoolarge',
+    'MoccaCalendar.notification.addObject.error'
+]});
+
+define('moccaCalendar', ['jquery', 'fullcalendar', 'moment', 'purify', 'xwiki-l10n!mocca-calendar-main-translations'],
+  function(jQuery, fullCalendar, moment, purify, l10n) {
 
 // Make sure the XWiki 'namespace' and the ModalPopup class exist.
 if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || typeof(XWiki.widgets.ModalPopup) == "undefined") {
@@ -187,12 +213,14 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
   },
   displayError: function(errorMessage) {
     if (!errorMessage) {
-      errorMessage = "$escapetool.javascript($services.localization.render('MoccaCalendar.generic.errormessage'))";
+      errorMessage = l10n['MoccaCalendar.generic.errormessage'];
     }
     if (this.errorNotification) {
        this.errorNotification.hide()
     }
-    this.errorNotification = new XWiki.widgets.Notification("$escapetool.javascript($services.localization.render('core.widgets.confirmationBox.notification.failed'))" + errorMessage, "error");
+    this.errorNotification = new XWiki.widgets.Notification(
+      purify.sanitize(l10n['core.widgets.confirmationBox.notification.failed']) + purify.sanitize(errorMessage),
+      'error');
   },
   showCreateEventFrom: function(start, end) {
     var allDay = !start.hasTime();
@@ -220,8 +248,10 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
   updateEvent: function(page, isResize, delta, startDate, endDate, revertFunc) {
     // FIXME: this only works "by accident" for meeting events, as they use the same fields for start/end date
     // see .UpdateService - that page needs to be updated
-    var savingBox = new XWiki.widgets.Notification("$escapetool.javascript($services.localization.render('core.widgets.confirmationBox.notification.inProgress'))", "inprogress", {inactive: true});
-    var savedBox = new XWiki.widgets.Notification("$escapetool.javascript($services.localization.render('core.widgets.confirmationBox.notification.done'))", "done", {inactive: true});
+    var savingBox = new XWiki.widgets.Notification(
+        purify.sanitize(l10n['core.widgets.confirmationBox.notification.inProgress']), "inprogress", {inactive: true});
+    var savedBox = new XWiki.widgets.Notification(
+        purify.sanitize(l10n['core.widgets.confirmationBox.notification.done']), "done", {inactive: true});
     var calendar = this.calendar;
 
     savingBox.show();
@@ -299,7 +329,9 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
         },
         {
           verticalPosition: "top",
-          title : this.interactionParameters.editMode ? "$escapetool.javascript($services.localization.render('MoccaCalendar.calendarevent.create'))" : "$escapetool.javascript($services.localization.render('MoccaCalendar.calendarevent.view'))",
+          title : this.interactionParameters.editMode
+            ? purify.sanitize(l10n['MoccaCalendar.calendarevent.create'])
+            : purify.sanitize(l10n['MoccaCalendar.calendarevent.view']),
           removeOnClose : true,
           onClose : function() {
             removeColorPickers();
@@ -352,8 +384,10 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
       this.showDialog();
       this.setClass("moccacal-modal-popup");
 
-      this.savingBox = new XWiki.widgets.Notification("$escapetool.javascript($services.localization.render('core.widgets.confirmationBox.notification.inProgress'))", "inprogress", {inactive: true});
-      this.savedBox = new XWiki.widgets.Notification("$escapetool.javascript($services.localization.render('core.widgets.confirmationBox.notification.done'))", "done", {inactive: true});
+      this.savingBox = new XWiki.widgets.Notification(
+        purify.sanitize(l10n['core.widgets.confirmationBox.notification.inProgress']), 'inprogress', {inactive: true});
+      this.savedBox = new XWiki.widgets.Notification(
+        purify.sanitize(l10n['core.widgets.confirmationBox.notification.done']), 'done', {inactive: true});
       this.savingBox.hide();
       this.savedBox.hide();
     },
@@ -399,7 +433,8 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
         parameters: { 'outputSyntax': 'plain', 'newEvent' : name, 'parent': $F($("calendarParent")) },
         onSuccess: function(response) {
           try {
-            var error = (response.responseJSON) ? response.responseJSON['error'] : "$escapetool.javascript($services.localization.render('MoccaCalendar.generic.errormessage'))";
+            var error = (response.responseJSON) ?
+              response.responseJSON['error'] : purify.sanitize(l10n['MoccaCalendar.generic.errormessage']);
             if (error) {
               this.savingBox.hide();
               this.helper.displayError(error);
@@ -486,7 +521,8 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
     },
 
     deleteEvent: function() {
-      var pending = new XWiki.widgets.Notification("$escapetool.javascript($services.localization.render('core.widgets.confirmationBox.notification.inProgress'))", "inprogress");
+      var pending = new XWiki.widgets.Notification(
+        purify.sanitize(l10n['core.widgets.confirmationBox.notification.inProgress']), 'inprogress');
       new Ajax.Request(this.interactionParameters.event.deleteUrl, {
         method: 'post',
         parameters: {'confirm': 1, 'ajax': true, 'form_token': this.helper.formToken},
@@ -495,7 +531,8 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
             return;
           }
           pending.hide();
-          new XWiki.widgets.Notification("$escapetool.javascript($services.localization.render('core.widgets.confirmationBox.notification.done'))", "done");
+          new XWiki.widgets.Notification(
+            purify.sanitize(l10n['core.widgets.confirmationBox.notification.done']), 'done');
           this.helper.calendar.fullCalendar('refetchEvents');
         }.bind(this),
         onFailure: function(e) {
@@ -512,7 +549,8 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
         return this.deleteEvent();
       }
 
-      var pending = new XWiki.widgets.Notification("$escapetool.javascript($services.localization.render('core.widgets.confirmationBox.notification.inProgress'))", "inprogress");
+      var pending = new XWiki.widgets.Notification(
+        purify.sanitize(l10n['core.widgets.confirmationBox.notification.inProgress']), 'inprogress');
       new Ajax.Request(this.helper.deleteEventInstanceUrl, {
         method: 'post',
         parameters: {'instanceStart' : this.interactionParameters.event.start.format('YYYY-MM-DD[T]HH:mm'), 'event' : this.interactionParameters.event.id, 'outputSyntax':'plain' },
@@ -524,7 +562,8 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
           if (response.responseJSON['error']) {
             this.helper.displayError(response.responseJSON['error']);
           } else {
-            new XWiki.widgets.Notification("$escapetool.javascript($services.localization.render('core.widgets.confirmationBox.notification.done'))", "done");
+            new XWiki.widgets.Notification(
+              purify.sanitize(l10n['core.widgets.confirmationBox.notification.done']), 'done');
           }
           this.helper.calendar.fullCalendar('refetchEvents');
         }.bind(this),
@@ -566,14 +605,14 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
           if (this.interactionParameters.editMode) {
             var that = this;
             if(this.helper.createEventBaseUrl.indexOf('disabled=disabled') === -1) {
-              buttons.insert(this.createButton("submit","$escapetool.javascript($services.localization.render('save'))","","save-moccacalendar-event","btn"));
+              buttons.insert(this.createButton('submit', purify.sanitize(l10n['save']), '', 'save-moccacalendar-event', 'btn'));
               buttons.down('#save-moccacalendar-event').observe('click', this.submitForm.bind(this));
               // MOCCACAL-128: the event template has a space in the title to avoid showing the page name, but we want to remove this on load
               var titleField = formcontent.down('input[name="title"]')
               if (titleField &amp;&amp; titleField.getAttribute('value').trim() == '') { titleField.setAttribute('value','') }
               document.fire('xwiki:moccacalendar:editloaded');
             }
-            buttons.insert('&lt;span class="buttonwrapper"&gt;&lt;a href="#" id="cancel-moccacalendar-event" class="secondary button"&gt;' + "$escapetool.javascript($services.localization.render('cancel'))" + '&lt;/a&gt;&lt;/span&gt;');
+            buttons.insert('&lt;span class="buttonwrapper"&gt;&lt;a href="#" id="cancel-moccacalendar-event" class="secondary button"&gt;' + purify.sanitize(l10n['cancel']) + '&lt;/a&gt;&lt;/span&gt;');
             buttons.down('#cancel-moccacalendar-event').observe('click', this.closeDialog.bind(this));
             $("MoccaCalendarEvent.MoccaCalendarEventClass_0_title").focus();
           } else {
@@ -581,23 +620,23 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
             buttons.insert(leftGroup);
             if (this.interactionParameters.event.canEdit) {
               if (oldSkin) {
-                leftGroup.insert(this.createButton("button","$escapetool.javascript($services.localization.render('edit'))","","edit-moccacalendar-event","btn"));
+                leftGroup.insert(this.createButton('button', purify.sanitize(l10n['edit']), '', 'edit-moccacalendar-event', 'btn'));
               } else {
-                leftGroup.insert('&lt;button class="button btn btn-default" id="edit-moccacalendar-event"&gt;&lt;span class="glyphicon glyphicon-pencil"&gt;&lt;/span&gt; '+"$escapetool.javascript($services.localization.render('edit'))"+'&lt;/button&gt;');
+                leftGroup.insert('&lt;button class="button btn btn-default" id="edit-moccacalendar-event"&gt;&lt;span class="glyphicon glyphicon-pencil"&gt;&lt;/span&gt; '+purify.sanitize(l10n['edit'])+'&lt;/button&gt;');
               }
               leftGroup.down("#edit-moccacalendar-event").observe('click', this.loadEditForm.bind(this));
             }
             // FIXME: this should be a plain link, but then it has no styles
             if (oldSkin) {
               if (this.interactionParameters.event.readOnly != true) {
-                leftGroup.insert(this.createButton("button","$escapetool.javascript($services.localization.render('view'))","","view-moccacalendar-event","btn"));
+                leftGroup.insert(this.createButton('button', purify.sanitize(l10n['view']), '', 'view-moccacalendar-event', 'btn'));
               }
-              leftGroup.insert('&lt;span class="buttonwrapper"&gt;&lt;a href="#" id="cancel-moccacalendar-event" class="secondary button"&gt;' + "$escapetool.javascript($services.localization.render('cancel'))" + '&lt;/a&gt;&lt;/span&gt;');
+              leftGroup.insert('&lt;span class="buttonwrapper"&gt;&lt;a href="#" id="cancel-moccacalendar-event" class="secondary button"&gt;' + purify.sanitize(l10n['cancel']) + '&lt;/a&gt;&lt;/span&gt;');
             } else {
               if (this.interactionParameters.event.readOnly != true) {
-                leftGroup.insert(' &lt;button class="button btn btn-default" id="view-moccacalendar-event"&gt;&lt;span class="glyphicon glyphicon-file"&gt;&lt;/span&gt; '+"$escapetool.javascript($services.localization.render('view'))"+'&lt;/button&gt;');
+                leftGroup.insert(' &lt;button class="button btn btn-default" id="view-moccacalendar-event"&gt;&lt;span class="glyphicon glyphicon-file"&gt;&lt;/span&gt; '+purify.sanitize(l10n['view'])+'&lt;/button&gt;');
               }
-              leftGroup.insert('&lt;button class="button btn btn-default" id="cancel-moccacalendar-event"&gt;&lt;span class="glyphicon glyphicon-remove"&gt;&lt;/span&gt; '+"$escapetool.javascript($services.localization.render('cancel'))"+'&lt;/button&gt;');
+              leftGroup.insert('&lt;button class="button btn btn-default" id="cancel-moccacalendar-event"&gt;&lt;span class="glyphicon glyphicon-remove"&gt;&lt;/span&gt; '+purify.sanitize(l10n['cancel'])+'&lt;/button&gt;');
             }
             if (this.interactionParameters.event.readOnly != true) {
               leftGroup.down("#view-moccacalendar-event").observe('click', function(e) { e.stop(); window.location.href = this.interactionParameters.event.viewUrl; }.bind(this));
@@ -607,13 +646,12 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
               var rightGroup = new Element('div', {'class':'btn-group btn-group-right'});
               buttons.insert(rightGroup);
               if (oldSkin) {
-                rightGroup.insert(this.createButton("button","$escapetool.javascript($services.localization.render('delete'))","","delete-moccacalendar-event","btn"));
+                rightGroup.insert(this.createButton("button",purify.sanitize(l10n['delete']),"","delete-moccacalendar-event","btn"));
               } else {
                 var button = ' &lt;button class="button remove-button btn btn-danger" type="button"' +
                   'id="delete-moccacalendar-event" data-toggle="modal" data-target="#deleteEvents"&gt;'
                 var span = '&lt;span class="glyphicon glyphicon-remove"&gt; &lt;/span&gt; '
-                rightGroup.insert(button + span +
-                  "$escapetool.javascript($services.localization.render('delete'))"+'&lt;/button&gt;');
+                rightGroup.insert(button + span + purify.sanitize(l10n['delete']) + '&lt;/button&gt;');
               }
               jQuery(rightGroup).find('#delete-moccacalendar-event').data('calendarPopup', this);
             }
@@ -861,7 +899,8 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
     renderSkeleton: function() {
       this.el.append('&lt;div class="fc-timeline-box" style="width:100%"/&gt;');
       this.contentEl = jQuery('.fc-timeline-box',this.el);
-      this.contentEl.append('&lt;img src="$xwiki.getSkinFile('icons/xwiki/ajax-loader-large.gif')" alt="$escapetool.xml($services.localization.render('platform.livetable.loading'))" /&gt;');
+      this.contentEl.append('&lt;img src="$xwiki.getSkinFile('icons/xwiki/ajax-loader-large.gif')" alt="'
+        + purify.sanitize(l10n['platform.livetable.loading']) + '" /&gt;');
     },
 
     // this method is both called with the pre/next buttons
@@ -875,11 +914,11 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
 
     computeTitle: function() {
       if (this.isPast) {
-        this.title = "$escapetool.javascript($services.localization.render('MoccaCalendar.calendar.plainlist.titlepast'))";
-        this.options['noEventsMessage'] = "$escapetool.javascript($services.localization.render('MoccaCalendar.calendar.plainlist.nopastevents'))";
+        this.title = purify.sanitize(l10n['MoccaCalendar.calendar.plainlist.titlepast']);
+        this.options['noEventsMessage'] = purify.sanitize(l10n['MoccaCalendar.calendar.plainlist.nopastevents']);
       } else {
-        this.title = "$escapetool.javascript($services.localization.render('MoccaCalendar.calendar.plainlist.titleupcoming'))";
-        this.options['noEventsMessage'] = "$escapetool.javascript($services.localization.render('MoccaCalendar.calendar.plainlist.noupcomingevents'))";
+        this.title = purify.sanitize(l10n['MoccaCalendar.calendar.plainlist.titleupcoming']);
+        this.options['noEventsMessage'] = purify.sanitize(l10n['MoccaCalendar.calendar.plainlist.noupcomingevents']);
       }
       return this.title;
     },
@@ -904,21 +943,10 @@ if (typeof(XWiki) == "undefined" || typeof(XWiki.widgets) == "undefined" || type
 
 });
 
-define('mocca-calendar-notification', {
-  prefix: 'MoccaCalendar.notification.',
-  keys: [
-    'import.inprogress',
-    'import.done',
-    'import.error',
-    'import.filetoolarge',
-    'addObject.error'
-  ]
-});
-
 /**
  * Delete event and calendar import actions.
  */
-require(['jquery', 'xwiki-meta', 'xwiki-job-runner', 'xwiki-l10n!mocca-calendar-notification'],
+require(['jquery', 'xwiki-meta', 'xwiki-job-runner', 'xwiki-l10n!mocca-calendar-main-translations'],
   function($, xwikiMeta, JobRunner, l10n) {
   /**
   * Events triggered before deleteEvents modal is shown: save the button that triggers
@@ -932,9 +960,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-job-runner', 'xwiki-l10n!mocca-calendar-
     var eventIsRecurrent = calendarPopup.interactionParameters.event.recurrent;
     var eventName = '«' + calendarPopup.interactionParameters.event.title + '»';
     $(this).find('input.do-delete-all').toggle(eventIsRecurrent);
-    $(this).find('.modal-body').text(
-      $jsontool.serialize($services.localization.render('MoccaCalendar.calendarevent.confirmDelete', '__replace__'))
-      .replace('__replace__', eventName));
+    $(this).find('.modal-body').text(l10n.get('MoccaCalendar.calendarevent.confirmDelete').replace('{0}', eventName));
   });
   /**
   * Events on modal buttons, for deleting an event or cancelling the action.
@@ -976,7 +1002,8 @@ require(['jquery', 'xwiki-meta', 'xwiki-job-runner', 'xwiki-l10n!mocca-calendar-
       },
       error: function (xhr, status, error) {
         console.error('Failed to add the MoccaCalendarClass object', error);
-        var notification = new XWiki.widgets.Notification(l10n.get('addObject.error'), 'error');
+        var notification = new XWiki.widgets.Notification(
+          purify.sanitize(l10n.get('MoccaCalendar.notification.addObject.error')), 'error');
       }
     });
   });
@@ -1005,12 +1032,13 @@ require(['jquery', 'xwiki-meta', 'xwiki-job-runner', 'xwiki-l10n!mocca-calendar-
         if (request.status === 202 || request.status === 302) {
           checkImportJob(select.value);
         } else {
-          new XWiki.widgets.Notification(l10n.get('import.error'),'error');
+          new XWiki.widgets.Notification(purify.sanitize(l10n.get('MoccaCalendar.notification.import.error')),'error');
         }
       };
       request.send(inputFile);
     } else {
-      var notification = new XWiki.widgets.Notification(l10n.get('import.filetoolarge'), 'error');
+      var notification = new XWiki.widgets.Notification(
+        purify.sanitize(l10n.get('MoccaCalendar.notification.import.filetoolarge')), 'error');
     }
   };
 
@@ -1027,7 +1055,8 @@ require(['jquery', 'xwiki-meta', 'xwiki-job-runner', 'xwiki-l10n!mocca-calendar-
       {name: 'data', value: 'jobStatus'},
       {name: 'form_token', value: xwikiMeta.form_token}
     );
-    var notification = new XWiki.widgets.Notification(l10n.get('import.inprogress'), 'inprogress');
+    var notification = new XWiki.widgets.Notification(
+      purify.sanitize(l10n.get('MoccaCalendar.notification.import.inprogress')), 'inprogress');
     $('.import-calendar-file-button').prop('disabled', true);
     return Promise.resolve(new JobRunner({
       createStatusRequest: function(jobId) {
@@ -1046,10 +1075,12 @@ require(['jquery', 'xwiki-meta', 'xwiki-job-runner', 'xwiki-l10n!mocca-calendar-
         throw new Error(response.error.message);
       } else {
         document.dispatchEvent(new Event('calendarImportCompleted'));
-        notification.replace(new XWiki.widgets.Notification(l10n.get('import.done'),'done'));
+        notification.replace(new XWiki.widgets.Notification(
+          purify.sanitize(l10n.get('MoccaCalendar.notification.import.done')), 'done'));
       }
     }).catch((reason) =&gt; {
-      notification.replace(new XWiki.widgets.Notification(l10n.get('import.error'),'error'));
+      notification.replace(new XWiki.widgets.Notification(
+        purify.sanitize(l10n.get('MoccaCalendar.notification.import.error')), 'error'));
       return Promise.reject(reason);
     }).finally(() =&gt; {
       $('.import-calendar-file-button').prop('disabled', false);
@@ -1683,11 +1714,11 @@ $xwiki.ssx.use("MoccaCalendar.Code.Macro", $parameterMap)
         &lt;div class="modal-header"&gt;
           &lt;button type="button" class="close" data-dismiss="modal"&gt;&amp;times;&lt;/button&gt;
           &lt;h4 class="modal-title"&gt;
-            $services.localization.render('moccacalendarevent.livetable._actions.delete')
+            $escapetool.xml($services.localization.render('moccacalendarevent.livetable._actions.delete'))
           &lt;/h4&gt;
         &lt;/div&gt;
         &lt;div class="modal-body"&gt;
-          &lt;div&gt;$services.localization.render('MoccaCalendar.calendarevent.confirmDelete')&lt;/div&gt;
+          &lt;div&gt;$escapetool.xml($services.localization.render('MoccaCalendar.calendarevent.confirmDelete'))&lt;/div&gt;
         &lt;/div&gt;
         &lt;div class="modal-footer"&gt;
           &lt;input type="button" class="btn btn-danger do-delete-all"
@@ -1769,8 +1800,8 @@ $xwiki.ssx.use("MoccaCalendar.Code.Macro", $parameterMap)
     &lt;input type="hidden" id="add-calendar-object" data-target="$escapetool.xml($services.rendering.escape($docRef, 'xwiki/2.1'))"&gt;
 
     {{info cssClass="add-calendar-object-container"}}
-      $escapetool.xml($services.localization.render('rendering.macro.moccacalendar.addObject.description'))
-      [[**$escapetool.xml($services.localization.render('rendering.macro.moccacalendar.addObject.button'))**&gt;&gt;$services.rendering.escape($docRef, 'xwiki/2.1')]]
+      $services.rendering.escape($services.localization.render('rendering.macro.moccacalendar.addObject.description'), 'xwiki/2.1')
+      [[**$services.rendering.escape($services.rendering.escape($services.localization.render('rendering.macro.moccacalendar.addObject.button'), 'xwiki/2.1'), 'xwiki/2.1')**&gt;&gt;$services.rendering.escape($docRef, 'xwiki/2.1')]]
     {{/info}}
   {{/html}}
 #end
@@ -1849,8 +1880,8 @@ $xwiki.ssx.use("MoccaCalendar.Code.Macro", $parameterMap)
 &lt;span class="buttonwrapper"&gt;
 &lt;button data-toggle="modal" data-target="#import-calendar-file-$calcounter"
   title="$escapetool.xml($services.localization.render('MoccaCalendar.calendarevent.import.title'))"&gt;
-  $escapetool.html($services.localization.render('MoccaCalendar.calendarevent.import'))&lt;/button&gt;
-&lt;button class="btn btn-success" id="calendar${calcounter}-btn"&gt;&lt;span class="glyphicon glyphicon-plus"&gt;&lt;/span&gt; $escapetool.html($services.localization.render('MoccaCalendar.calendarevent.create'))&lt;/button&gt;
+  $escapetool.xml($services.localization.render('MoccaCalendar.calendarevent.import'))&lt;/button&gt;
+&lt;button class="btn btn-success" id="calendar${calcounter}-btn"&gt;&lt;span class="glyphicon glyphicon-plus"&gt;&lt;/span&gt; $escapetool.xml($services.localization.render('MoccaCalendar.calendarevent.create'))&lt;/button&gt;
 &lt;/span&gt;
 &lt;/div&gt;
 ## end create event link
@@ -1863,8 +1894,28 @@ require.config({
   },
 });
 
+define('mocca-calendar-script-translations', {
+  keys: [
+    'moccacalendar.subscribedevent.allday.yes',
+    'moccacalendar.subscribedevent.allday.no',
+    'xwiki.calendar.allDayText',
+    'xwiki.calendar.axisFormat',
+    'xwiki.calendar.columnFormat.month',
+    'xwiki.calendar.titleFormat.month',
+    'xwiki.calendar.button.month',
+    'xwiki.calendar.columnFormat.week',
+    'xwiki.calendar.titleFormat.week',
+    'xwiki.calendar.button.week',
+    'xwiki.calendar.columnFormat.day',
+    'xwiki.calendar.titleFormat.day',
+    'xwiki.calendar.button.day',
+    'xwiki.calendar.button.today',
+    'xwiki.calendar.button.plainList',
+]});
 
-require(['xwiki-meta', 'jquery', 'moment','purify', 'gcal', 'moccaCalendar'], function(xwikiMeta, jQuery, moment, purify) {
+require(
+  ['xwiki-meta', 'jquery', 'moment','purify', 'xwiki-l10n!mocca-calendar-script-translations', 'gcal', 'moccaCalendar'],
+  function(xwikiMeta, jQuery, moment, purify, l10n) {
  jQuery(document).ready(function() {
   var defaultView = XWiki.MoccaCalendar.Helper.getCalendarView("$!escapetool.javascript($defaultView)");
 
@@ -1950,8 +2001,8 @@ require(['xwiki-meta', 'jquery', 'moment','purify', 'gcal', 'moccaCalendar'], fu
           title: purify.sanitize(calEvent.title),
           start: calEvent.start.format(dateFormat),
           end: calEvent.end ? calEvent.end.format(dateFormat) : null,
-          allDay: calEvent.allDay ? "$escapetool.xml($services.localization.render('moccacalendar.subscribedevent.allday.yes'))" :
-                                    "$escapetool.xml($services.localization.render('moccacalendar.subscribedevent.allday.no'))",
+          allDay: calEvent.allDay ? purify.sanitize(l10n['moccacalendar.subscribedevent.allday.yes']) :
+            purify.sanitize(l10n['moccacalendar.subscribedevent.allday.no']),
           description: purify.sanitize(calEvent.description),
           readOnly: 'true'
         };
@@ -1973,12 +2024,12 @@ require(['xwiki-meta', 'jquery', 'moment','purify', 'gcal', 'moccaCalendar'], fu
       right: "$!escapetool.javascript($right)"
     },
     defaultView: defaultView,
-#if($year!="")    year: $!escapetool.javascript($year),#end
-#if($month!="")   month: $!escapetool.javascript($month), #end
-#if($date!="")    date: $!escapetool.javascript($date), #end
-    firstDay: $escapetool.javascript($firstDay),
-#if($minTime!="")    minTime: "$!escapetool.javascript($minTime)", #end
-#if($maxTime!="")    maxTime: "$!escapetool.javascript($maxTime)", #end
+#if($year!="")    year: parseInt("$!escapetool.javascript($year)"),#end
+#if($month!="")   month: parseInt("$!escapetool.javascript($month)"), #end
+#if($date!="")    date: parseInt("$!escapetool.javascript($date)"), #end
+    firstDay: parseInt("$!escapetool.javascript($firstDay)"),
+#if($minTime!="")    minTime: parseInt("$!escapetool.javascript($minTime)"), #end
+#if($maxTime!="")    maxTime: parseInt("$!escapetool.javascript($maxTime)"), #end
     editable: #if($canCreateEvents) true #else false#end ,
     selectable: #if($canCreateEvents) true #else false#end ,
     selectHelper: true,
@@ -1997,32 +2048,32 @@ require(['xwiki-meta', 'jquery', 'moment','purify', 'gcal', 'moccaCalendar'], fu
     monthNamesShort: $services.localization.render('xwiki.calendar.monthNamesShort'),
     dayNames: $services.localization.render('xwiki.calendar.dayNames'),
     dayNamesShort: $services.localization.render('xwiki.calendar.dayNamesShort'),
-    allDayText: "$escapetool.javascript($services.localization.render('xwiki.calendar.allDayText'))",
-    axisFormat: "$escapetool.javascript($services.localization.render('xwiki.calendar.axisFormat'))",
+    allDayText: l10n['xwiki.calendar.allDayText'],
+    axisFormat: l10n['xwiki.calendar.axisFormat'],
     timeFormat: "$escapetool.javascript($timeFormat)",
     views: {
       month : {
-        columnFormat: "$!services.localization.render('xwiki.calendar.columnFormat.month')",
-        titleFormat: "$!services.localization.render('xwiki.calendar.titleFormat.month')",
-        buttonText: "$!services.localization.render('xwiki.calendar.button.month')"
+        columnFormat: l10n['xwiki.calendar.columnFormat.month'],
+        titleFormat: l10n['xwiki.calendar.titleFormat.month'],
+        buttonText: l10n['xwiki.calendar.button.month']
       },
       week : {
-        columnFormat: "$!services.localization.render('xwiki.calendar.columnFormat.week')",
-        titleFormat: "$!services.localization.render('xwiki.calendar.titleFormat.week')",
-        buttonText: "$!services.localization.render('xwiki.calendar.button.week')",
+        columnFormat: l10n['xwiki.calendar.columnFormat.week'],
+        titleFormat: l10n['xwiki.calendar.titleFormat.week'],
+        buttonText: l10n['xwiki.calendar.button.week'],
         slotLabelFormat: "$escapetool.javascript($timeFormat)"
       },
       day : {
-        columnFormat: "$!services.localization.render('xwiki.calendar.columnFormat.day')",
-        titleFormat: "$!services.localization.render('xwiki.calendar.titleFormat.day')",
-        buttonText: "$!services.localization.render('xwiki.calendar.button.day')",
+        columnFormat: l10n['xwiki.calendar.columnFormat.day'],
+        titleFormat: l10n['xwiki.calendar.titleFormat.day'],
+        buttonText: l10n['xwiki.calendar.button.day'],
         slotLabelFormat: "$escapetool.javascript($timeFormat)"
       },
       today: {
-        buttonText: "$!services.localization.render('xwiki.calendar.button.today')"
+        buttonText: l10n['xwiki.calendar.button.today']
       },
       plainList: {
-        buttonText: "$!services.localization.render('xwiki.calendar.button.plainList')"
+        buttonText: l10n['xwiki.calendar.button.plainList']
       }
     }
   });
@@ -2040,7 +2091,7 @@ require(['xwiki-meta', 'jquery', 'moment','purify', 'gcal', 'moccaCalendar'], fu
     "$escapetool.javascript($dateCheckUrl)",
     "$escapetool.javascript($deleteEventInstanceUrl)",
     "$escapetool.javascript($newPageParams)",
-    "${escapetool.javascript($services.csrf.getToken())}"
+    "$escapetool.javascript($services.csrf.getToken())"
   );
   });
 });
